@@ -1,4 +1,3 @@
-// === BACKEND: src/server.ts ===
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import multer from "multer";
@@ -28,23 +27,17 @@ app.post(
   (req: Request, res: Response, next: NextFunction) => {
     upload.single("resume")(req, res, (err: any) => {
       if (err) {
-        console.error("❌ Multer error:", err);
+        console.error("Multer error:", err);
         return res.status(400).json({ error: "File upload failed" });
       }
       next();
     });
   },
   async (req: Request, res: Response): Promise<void> => {
-    console.log("✅ POST /multi-analyze hit");
-
     const jobDescription = (req.body as any).jobDescription;
     const file = req.file as Express.Multer.File | undefined;
 
-    console.log("📦 File:", file);
-    console.log("📝 Job Description:", jobDescription);
-
     if (!file || !jobDescription) {
-      console.log("❌ Missing file or job description");
       res.status(400).json({ error: "Missing resume file or job description" });
       return;
     }
@@ -53,8 +46,6 @@ app.post(
       const buffer = fs.readFileSync(path.resolve(file.path));
       const data = await pdfParse(buffer);
       const resumeText = data.text;
-
-      console.log("📄 Extracted resume text:", resumeText);
 
       const jobKeywords = jobDescription
         .split(/[ ,\\n]+/)
@@ -78,7 +69,6 @@ app.post(
         missingSkills,
       });
     } catch (error) {
-      console.error("❌ Error analyzing resume:", error);
       res.status(500).json({ error: "Failed to analyze resume" });
     } finally {
       if (file) fs.unlinkSync(file.path);
