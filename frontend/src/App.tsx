@@ -19,7 +19,7 @@ export default function App() {
             }}
           />{" "}
           <Typography variant="h4" gutterBottom>
-            CV Skill Matcher
+            CVScreener
           </Typography>
         </Stack>
         <Typography variant="body2" gutterBottom>
