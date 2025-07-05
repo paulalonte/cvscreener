@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import { useDropzone } from "react-dropzone";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 
 interface MatchResult {
   fileName: string;
@@ -116,10 +117,10 @@ export default function MultiCVUploader({
         sx={{ minHeight: 400 }}
       >
         <Box>
-          <Typography variant="h6" gutterBottom>
-            Upload Multiple CVs
-          </Typography>
-
+          <Stack direction="row" alignItems="center" gap={1}>
+            <InsertDriveFileIcon sx={{ color: "#999" }} />
+            <Typography variant="h6">Upload Multiple CVs</Typography>
+          </Stack>
           <Box
             {...getRootProps()}
             sx={{

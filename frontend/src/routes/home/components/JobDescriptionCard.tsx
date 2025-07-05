@@ -29,7 +29,7 @@ export default function JobDescriptionCard({
       }}
     >
       <Box display="flex" alignItems="center" mb={2}>
-        <WorkOutlineIcon color="success" sx={{ mr: 1 }} />
+        <WorkOutlineIcon sx={{ color: "#999", mr: 1 }} />
         <Typography variant="h6">Job Description</Typography>
       </Box>
       <TextareaAutosize
