@@ -9,6 +9,7 @@ import {
   LinearProgress,
   Alert,
   Stack,
+  Divider,
 } from "@mui/material";
 import { useDropzone } from "react-dropzone";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
@@ -31,6 +32,8 @@ export default function MultiCVUploader({
   const [files, setFiles] = useState<File[]>([]);
   const [results, setResults] = useState<MatchResult[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const [uploadErrors, setUploadErrors] = useState<Record<string, string>>({});
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     setFiles((prev) => [...prev, ...acceptedFiles]);
@@ -56,12 +59,14 @@ export default function MultiCVUploader({
     setLoading(true);
     setResults([]);
 
-    const allResults: MatchResult[] = [];
+    const errors: Record<string, string> = {};
+    const resultsList: MatchResult[] = [];
 
     for (const file of files) {
       const formData = new FormData();
       formData.append("resume", file);
       formData.append("jobDescription", jobDescription);
+      formData.append("filename", file.name); // for server fallback
 
       try {
         const res = await fetch("http://localhost:5001/multi-analyze", {
@@ -69,20 +74,27 @@ export default function MultiCVUploader({
           body: formData,
         });
 
-        const data = await res.json();
-        allResults.push({
-          fileName: file.name,
-          matchScore: data.matchScore,
-          matchedSkills: data.matchedSkills,
-          missingSkills: data.missingSkills,
-          passed: data.matchScore >= 50,
-        });
+        if (!res.ok) {
+          const errorData = await res.json();
+          errors[file.name] =
+            errorData.error || `Upload failed for ${file.name}`;
+        } else {
+          const data = await res.json();
+          resultsList.push({
+            fileName: file.name,
+            matchScore: data.matchScore,
+            matchedSkills: data.matchedSkills,
+            missingSkills: data.missingSkills,
+            passed: data.matchScore >= 50,
+          });
+        }
       } catch (err) {
-        console.error(`Error analyzing ${file.name}:`, err);
+        errors[file.name] = `Error analyzing ${file.name}`;
       }
     }
 
-    setResults(allResults);
+    setUploadErrors(errors);
+    setResults(resultsList);
     setLoading(false);
   };
 
@@ -116,6 +128,7 @@ export default function MultiCVUploader({
               textAlign: "center",
               cursor: "pointer",
               bgcolor: isDragActive ? "#f0f8ff" : "inherit",
+              marginTop: 2,
             }}
           >
             <input {...getInputProps()} />
@@ -123,7 +136,7 @@ export default function MultiCVUploader({
               sx={{ fontSize: 40, color: "text.secondary", mb: 1 }}
             />
             <Typography variant="body2">
-              Drop CVs here or click to select up to 5 resumes
+              Drop CVs here or click to select multiple files
             </Typography>
           </Box>
 
@@ -137,6 +150,12 @@ export default function MultiCVUploader({
             ))}
           </List>
         </Box>
+        {Object.entries(uploadErrors).map(([filename, message]) => (
+          <Alert key={filename} severity="error" sx={{ mt: 2 }}>
+            <strong>{filename}:</strong> {message}
+          </Alert>
+        ))}
+
         <Button
           variant="contained"
           color="primary"
@@ -169,22 +188,25 @@ export default function MultiCVUploader({
       {loading && <LinearProgress sx={{ mt: 2 }} />}
 
       {results.length > 0 && (
-        <Box mt={4}>
-          <Typography variant="h6">Analysis Results</Typography>
-          {results.map((result) => (
-            <Alert
-              key={result.fileName}
-              severity={result.passed ? "success" : "warning"}
-              sx={{ mt: 2 }}
-            >
-              <strong>{result.fileName}</strong> — Match Score:{" "}
-              {result.matchScore}%<br />
-              {result.passed ? "✅ Passed" : "❌ Not a good fit"}
-              <br />
-              <em>Missing:</em> {result.missingSkills.join(", ") || "None"}
-            </Alert>
-          ))}
-        </Box>
+        <>
+          <Divider sx={{ marginTop: 2, marginBottom: 2 }} />
+          <Box mt={4}>
+            <Typography variant="h6">Analysis Results</Typography>
+            {results.map((result) => (
+              <Alert
+                key={result.fileName}
+                severity={result.passed ? "success" : "warning"}
+                sx={{ mt: 2 }}
+              >
+                <strong>{result.fileName}</strong> — Match Score:{" "}
+                {result.matchScore}%<br />
+                {result.passed ? "✅ Passed" : "❌ Not a good fit"}
+                <br />
+                <em>Missing:</em> {result.missingSkills.join(", ") || "None"}
+              </Alert>
+            ))}
+          </Box>
+        </>
       )}
     </Paper>
   );

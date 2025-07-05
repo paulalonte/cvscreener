@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import multer from "multer";
 import pdfParse from "pdf-parse";
+import mammoth from "mammoth";
 import fs from "fs";
 import path from "path";
 
@@ -11,16 +12,11 @@ const PORT = 5001;
 app.use(cors());
 app.use(express.json());
 
-const upload = multer({ dest: "uploads/" });
-
-const jobSkills = [
-  "JavaScript",
-  "Node.js",
-  "React",
-  "TypeScript",
-  "Cypress",
-  "AWS",
-];
+const upload = multer({
+  dest: "uploads/",
+  limits: { fileSize: 5 * 1024 * 1024 }, //5MB
+  // limits: { fileSize: 10 * 1024 }, // 10 KB
+});
 
 app.post(
   "/multi-analyze",
@@ -28,8 +24,17 @@ app.post(
     upload.single("resume")(req, res, (err: any) => {
       if (err) {
         console.error("Multer error:", err);
-        return res.status(400).json({ error: "File upload failed" });
+        const isSizeError = err.code === "LIMIT_FILE_SIZE";
+        const attemptedFile =
+          req.file?.originalname || req.body?.filename || "Unknown file";
+
+        return res.status(400).json({
+          error: isSizeError
+            ? `File "${attemptedFile}" is too large. Max size: 10 KB.`
+            : `Upload failed for "${attemptedFile}".`,
+        });
       }
+
       next();
     });
   },
@@ -43,9 +48,28 @@ app.post(
     }
 
     try {
-      const buffer = fs.readFileSync(path.resolve(file.path));
-      const data = await pdfParse(buffer);
-      const resumeText = data.text;
+      const fileExt = path.extname(file.originalname).toLowerCase();
+      let resumeText = "";
+
+      if (fileExt === ".pdf") {
+        const buffer = fs.readFileSync(path.resolve(file.path));
+        const data = await pdfParse(buffer);
+        resumeText = data.text;
+      } else if (fileExt === ".docx") {
+        const buffer = fs.readFileSync(path.resolve(file.path));
+        const result = await mammoth.extractRawText({ buffer });
+        resumeText = result.value;
+      } else {
+        res
+          .status(400)
+          .json({ error: "Unsupported file format. Use PDF or DOCX." });
+        return;
+      }
+
+      if (!resumeText || resumeText.trim().length < 30) {
+        res.status(400).json({ error: "Unable to extract text from resume." });
+        return;
+      }
 
       const jobKeywords = jobDescription
         .split(/[ ,\\n]+/)

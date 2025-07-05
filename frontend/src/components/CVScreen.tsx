@@ -7,7 +7,7 @@ import MultiCVUploader from "./MultiUploader";
 export default function BasicGrid() {
   const [jobDescription, setJobDescription] = useState("");
   return (
-    <Grid container spacing={4}>
+    <Grid container spacing={4} paddingBottom={10}>
       <Grid size={{ sm: 12, md: 4 }}>
         <JobDescriptionCard onTextChange={setJobDescription} />
       </Grid>
