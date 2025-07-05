@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Paper, Typography, TextField, Box } from "@mui/material";
+import { Paper, Typography, Box, TextareaAutosize } from "@mui/material";
 import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
 
 interface JobDescriptionCardProps {
@@ -11,7 +11,7 @@ export default function JobDescriptionCard({
 }: JobDescriptionCardProps) {
   const [jobDescription, setJobDescription] = useState("");
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
     setJobDescription(text);
     onTextChange(text); // Pass value to parent
@@ -32,15 +32,20 @@ export default function JobDescriptionCard({
         <WorkOutlineIcon color="success" sx={{ mr: 1 }} />
         <Typography variant="h6">Job Description</Typography>
       </Box>
-
-      <TextField
-        label="Paste the job description here..."
-        multiline
-        rows={12}
-        fullWidth
-        variant="outlined"
-        value={jobDescription}
+      <TextareaAutosize
+        aria-label="minimum height"
+        minRows={14}
         onChange={handleChange}
+        placeholder="Paste the job description here..."
+        style={{
+          width: "100%",
+          borderRadius: 4,
+          maxWidth: "100%",
+          border: "1px solid #ddd",
+          padding: 20,
+          boxSizing: "border-box",
+        }}
+        value={jobDescription}
       />
     </Paper>
   );

@@ -8,10 +8,10 @@ export default function BasicGrid() {
   const [jobDescription, setJobDescription] = useState("");
   return (
     <Grid container spacing={4} paddingBottom={10}>
-      <Grid size={{ sm: 12, md: 4 }}>
+      <Grid size={{ sm: 12, md: 6 }}>
         <JobDescriptionCard onTextChange={setJobDescription} />
       </Grid>
-      <Grid border={0} size={{ sm: 12, md: 8 }}>
+      <Grid border={0} size={{ sm: 12, md: 6 }}>
         <MultiCVUploader jobDescription={jobDescription} />
       </Grid>
     </Grid>
